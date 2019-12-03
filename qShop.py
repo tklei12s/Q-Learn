@@ -33,7 +33,7 @@ maxRandQValue = 10                      #Q Table zufällig zwischen 0 und 10
 orderPointer = np.zeros(p1.m)           #Zeigt auf die Stelle in der Q tabelle der Machinen des index, der als nächsts dran ist
 q = np.array(p1.m)
 for i in range(0, p1.m):
-        q[i] = np.randint(maxRandQValue,size=(p1.n, p1.n))
+        q[i] = np.randint(high=maxRandQValue,size=(p1.n, p1.n))
 
 bestValue = -1
 bestConfig = np.zeros((p1.m, maxTime))   #Gant Diagramm
