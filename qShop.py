@@ -3,6 +3,7 @@ import json
 import numpy as np
 from copy import deepcopy
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 class myProblem:
@@ -36,6 +37,7 @@ working = []                            #Liste aller aktuell laufenden Prozesse 
 maxRandQValue = 10                      #Q Table zufällig zwischen 0 und 10
 orderPointer = np.zeros(p1.m, dtype=int)           #Zeigt auf die Stelle in der Q tabelle der Machinen des index, der als nächsts dran ist
 q = np.random.randint(low=0, high=maxRandQValue, size=(p1.m, p1.n, p1.n))    #[Maschine][orderPointer][Job]
+blocked = np.zeros(p1.m, dtype=int)
 countAlpha = np.zeros((p1.m, p1.n, p1.n), dtype=int)
 bestTime = maxTime
 bestConfig = np.zeros((p1.m, maxTime), dtype=int)   #Gant Diagramm
@@ -50,6 +52,7 @@ def learn():
         options = getCurrentOptions()
         idle = np.random.random_sample()
         while(len(options) > 0 and idle > idleProb):
+            idle = np.random.random_sample()
             randNum = np.random.randint(low=0, high=len(options), size=1)[0]
             rand = options[randNum]
             best = getMaxQValue(options)
@@ -63,6 +66,7 @@ def learn():
             i = choose[0]
             j = choose[1]
             belegung[j][i] = p1.bearbeitungszeiten[j][i]
+            blocked[j] = 1
             orderPointer[j] += 1
             options = getCurrentOptions()
         updateAll()
@@ -86,13 +90,11 @@ def getMaxQValue(options):
     return bestO
 
 
-
-
 def getCurrentOptions():
     result = []
     for i in range(0, p1.n):
         j = nextMaschine[i]
-        if(j != -1):
+        if(j != -1 and blocked[j] == 0):
             if(belegung[j][i] == 0):
                 result.append((i,j))
     return result #tupel (auftrag, maschine)
@@ -101,11 +103,8 @@ def getCurrentOptions():
 def updateAll():
     global curTime, bestConfig, bestTime, working, zuBearbeiten
 
-    print(working)
-    print(zuBearbeiten)
-    print(belegung)
+    removeList = []
     if len(working) == 0 and np.matrix.sum(np.matrix(zuBearbeiten)) == 0:
-        print("fertig")
         if(curTime < bestTime):
             bestTime = curTime
             bestConfig = currentConfig
@@ -115,17 +114,17 @@ def updateAll():
         currentConfig[j][curTime] = i+1
         belegung[j][i] -= 1
         zuBearbeiten[j][i] -= 1
-
-    for t in working:
-        i = t[0]
-        j = t[1]
         if belegung[j][i] == 0:     #fertig geworden
-            working.remove(t)
+            blocked[j] = 0
+            removeList.append(t)
             nextMachinePointer[i] +=1
             if(nextMachinePointer[i] == p1.m):
                 nextMaschine[i] = -1
             else:
                 nextMaschine[i] = p1.reihenfolge[nextMachinePointer[i]][i]
+
+    for r in removeList:
+        working.remove(r)
         
     curTime += 1
 
@@ -150,23 +149,42 @@ def updateQ(t):
     countAlpha[j][curPos][i] += 1
     alphaValue = 1/(1+countAlpha[j][curPos][i])
 
-    if(np.all(zuBearbeiten[j][p] == 0 for p in range(0, p1.n) if p not in [i])): #wenn i der letzte Job auf j ist, dann belohnung = fertigstellungszeitpunkt von i, also damit Cmax fuer Maschine j
+
+
+    if(maschineFertig(j, i)): #wenn i der letzte Job auf j ist, dann belohnung = fertigstellungszeitpunkt von i, also damit Cmax fuer Maschine j
         r = curTime + p1.bearbeitungszeiten[j][i]
     else:
         r = 0
     qMin = np.min([q[j][p][i] for p in range(0, p1.n)])
     q[j][curPos][i] = (1-alphaValue) * q[j][curPos][i] + alphaValue * (r + gamma * qMin)
 
+def maschineFertig(j, i):
+    for p in range(0, p1.n):
+        if p == i:
+            continue
+        if zuBearbeiten[j][p] != 0:
+            return False
+    return True
+
+def printGant():
+    newBestConfig = np.zeros((p1.m, bestTime), dtype=int)
+    for i in range(0, p1.m):
+        for j in range(0, bestTime):
+            newBestConfig[i][j] = bestConfig[i][j]
+    print(newBestConfig)
+    print(bestTime)
+    sns.heatmap(newBestConfig)
+    plt.show()
+    
 
 
-print(q)
 
-for i in range(1):
+for i in range(1000):
     learn()
 
+printGant()
 
-print(bestConfig)
-print(q)
-ax = sns.heatmap(bestConfig)
+
+
 
 
