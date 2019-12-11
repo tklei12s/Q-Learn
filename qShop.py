@@ -4,10 +4,13 @@ import numpy as np
 from copy import deepcopy
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
 
 
 class myProblem:
-    with open(r'C:\Users\Tom\Desktop\Q-Learn\example.json') as f:
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, 'example.json')
+    with open(filename) as f:
         data = json.load(f)
     name = data["name"]
     kommentar = data["kommentar"]
@@ -55,7 +58,7 @@ def learn():
             idle = np.random.random_sample()
             randNum = np.random.randint(low=0, high=len(options), size=1)[0]
             rand = options[randNum]
-            best = getMaxQValue(options)
+            best = getMinQValue(options)
             chooseNum = np.random.choice(a=[0, 1], size=1, p=[eps, 1-eps])
             if chooseNum == 1:
                 choose = rand
@@ -76,15 +79,15 @@ def learn():
 
         
 
-def getMaxQValue(options):
+def getMinQValue(options):
     bestO = options[0]
-    bestValue = 0
+    bestValue = 99999
     for o in options:
         i = o[0]
         j = o[1]
         if(orderPointer[j] != p1.n):
             cur = q[j][orderPointer[j]][i] #Q wert zu tupel (i,j)=o
-            if(cur > bestValue):
+            if(cur < bestValue):
                 bestO = o
                 bestValue = cur
     return bestO
@@ -179,10 +182,13 @@ def printGant():
 
 
 
-for i in range(1000):
+for i in range(10000):
     learn()
 
+
+print(q)
 printGant()
+
 
 
 
