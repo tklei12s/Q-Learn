@@ -179,12 +179,8 @@ def printGant():
 
 
 
-for i in range(1000):
+for i in range(10000):
     learn()
 
 printGant()
-
-
-
-
-
+print(q)
