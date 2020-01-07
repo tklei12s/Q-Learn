@@ -9,7 +9,7 @@ import os
 
 class myProblem:
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'example.json')
+    filename = os.path.join(dirname, 'buch.json')
     with open(filename) as f:
         data = json.load(f)
     name = data["name"]
@@ -39,7 +39,8 @@ nextMaschine = deepcopy(p1.reihenfolge[0])        #nextMaschine[i] gibt nächste
 working = []                            #Liste aller aktuell laufenden Prozesse (Auftrag, Maschine Tupel)
 maxRandQValue = 15                      #Q Table zufällig zwischen 0 und 10
 orderPointer = np.zeros(p1.m, dtype=int)           #Zeigt auf die Stelle in der Q tabelle der Machinen des index, der als nächsts dran ist
-q = np.random.randint(low=0, high=maxRandQValue, size=(p1.m, p1.n, p1.n))    #[Maschine][orderPointer][Job]
+q = np.zeros((p1.m, p1.n, p1.n), dtype=float)
+#q = np.random.randint(low=0, high=maxRandQValue, size=(p1.m, p1.n, p1.n))    #[Maschine][orderPointer][Job]
 blocked = np.zeros(p1.m, dtype=int)
 countAlpha = np.zeros((p1.m, p1.n, p1.n), dtype=int)
 bestTime = maxTime
@@ -49,7 +50,7 @@ meanTimepermachine = [np.mean(p1.bearbeitungszeiten[i]) for i in range(0, p1.n)]
 bestPerMachine = np.ones((p1.m), dtype=float)*99999
 eps = 0.3
 idleProb = 0.05
-gamma = 0.9
+gamma = 0.7
 curTime = 0
 
 def learn():
@@ -142,7 +143,7 @@ def resetAll():
     nextMaschine = deepcopy(p1.reihenfolge[0])
     working = []
     orderPointer = np.zeros(p1.m, dtype=int)
-    countAlpha = np.zeros((p1.m, p1.n, p1.n), dtype=int)
+    #countAlpha = np.zeros((p1.m, p1.n, p1.n), dtype=int)
     currentConfig = np.zeros((p1.m, maxTime), dtype=int)
 
 
@@ -155,16 +156,17 @@ def updateQ(t):
     alphaValue = 1/(1+countAlpha[j][curPos][i])
 
     if(maschineFertig(j, i)): #wenn i der letzte Job auf j ist, dann belohnung = fertigstellungszeitpunkt von i, also damit Cmax fuer Maschine j
-        if (curTime + p1.bearbeitungszeiten[j][i]) < bestPerMachine[j]:
+        if (curTime + p1.bearbeitungszeiten[j][i]) <= bestPerMachine[j]:
+            r = 0
             bestPerMachine[j] = curTime+p1.bearbeitungszeiten[j][i]
-
-    aproxFinish = (p1.n-curPos)*meanTimepermachine[j]+curTime
-    if aproxFinish>bestPerMachine[j]:
-        r = aproxFinish-bestPerMachine[j]
+        else:
+            r = curTime+p1.bearbeitungszeiten[j][i]
     else:
-        r = 0
-    #else:
-    #    r = curTime + p1.bearbeitungszeiten[j][i]
+        aproxFinish = (p1.n-curPos)*meanTimepermachine[j]+curTime+(p1.n-curPos)
+        if aproxFinish>bestPerMachine[j]:
+            r = aproxFinish-bestPerMachine[j]
+        else:
+            r = 0
     if curPos < p1.n-1:
         qMin = np.min([q[j][curPos+1][p] for p in range(0, p1.n)])
     else:
@@ -180,7 +182,7 @@ def maschineFertig(j, i):
     return True
 
 def printGant():
-    print(q)
+    print(np.round(q))
     newBestConfig = np.zeros((p1.m, bestTime), dtype=int)
     for i in range(0, p1.m):
         for j in range(0, bestTime):
