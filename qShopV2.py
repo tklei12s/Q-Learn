@@ -5,11 +5,12 @@ from copy import deepcopy
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
+import time
 
 
 class myProblem:
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'buch.json')
+    filename = os.path.join(dirname, 'problem.json')
     with open(filename) as f:
         data = json.load(f)
     name = data["name"]
@@ -49,20 +50,17 @@ currentConfig = np.zeros((p1.m, maxTime), dtype=int)
 meanTimepermachine = [np.mean(p1.bearbeitungszeiten[i]) for i in range(0, p1.n)]
 bestPerMachine = np.ones((p1.m), dtype=float)*99999
 eps = 0.3
-idleProb = 0.05
 gamma = 0.7
 curTime = 0
 
 def learn():
     while(np.matrix.sum(np.matrix(zuBearbeiten)) != 0):
         options = getCurrentOptions()
-        idle = np.random.random_sample()
-        while(len(options) > 0 and idle > idleProb):
-            idle = np.random.random_sample()
+        while(len(options) > 0):
             randNum = np.random.randint(low=0, high=len(options), size=1)[0]
             rand = options[randNum]
-            best = getMinQValue(options)
-            chooseNum = np.random.choice(a=[0, 1], size=1, p=[eps, 1-eps])
+            best = getMaxQValue(options)
+            chooseNum = np.random.choice(a=[0, 1], size=1, p=[1-eps, eps])
             if chooseNum == 1:
                 choose = rand
             else:
@@ -82,15 +80,15 @@ def learn():
 
         
 
-def getMinQValue(options):
+def getMaxQValue(options):
     bestO = options[0]
-    bestValue = 99999
+    bestValue = -1
     for o in options:
         i = o[0]
         j = o[1]
         if(orderPointer[j] != p1.n):
             cur = q[j][orderPointer[j]][i] #Q wert zu tupel (i,j)=o
-            if(cur < bestValue):
+            if(cur > bestValue):
                 bestO = o
                 bestValue = cur
     return bestO
@@ -155,23 +153,19 @@ def updateQ(t):
     countAlpha[j][curPos][i] += 1
     alphaValue = 1/(1+countAlpha[j][curPos][i])
 
-    if(maschineFertig(j, i)): #wenn i der letzte Job auf j ist, dann belohnung = fertigstellungszeitpunkt von i, also damit Cmax fuer Maschine j
-        if (curTime + p1.bearbeitungszeiten[j][i]) <= bestPerMachine[j]:
-            r = 0
-            bestPerMachine[j] = curTime+p1.bearbeitungszeiten[j][i]
-        else:
-            r = curTime+p1.bearbeitungszeiten[j][i]
-    else:
-        aproxFinish = (p1.n-curPos)*meanTimepermachine[j]+curTime+(p1.n-curPos)
-        if aproxFinish>bestPerMachine[j]:
-            r = aproxFinish-bestPerMachine[j]
-        else:
-            r = 0
+    remainingTime = sum(zuBearbeiten[j])
+    infi = sum(p1.bearbeitungszeiten[j])
+
+    r = 1000/pow((curTime + remainingTime + (p1.n-curPos) - infi),3)
+
     if curPos < p1.n-1:
-        qMin = np.min([q[j][curPos+1][p] for p in range(0, p1.n)])
+        qMax = np.max([q[j][curPos+1][p] for p in range(0, p1.n)])
     else:
-        qMin = 0
-    q[j][curPos][i] = (1-alphaValue) * q[j][curPos][i] + alphaValue * (r + gamma * qMin)
+        qMax = 0
+
+    q[j][curPos][i] = (1-alphaValue) * q[j][curPos][i] + alphaValue*(r+gamma*qMax)
+
+
 
 def maschineFertig(j, i):
     for p in range(0, p1.n):
@@ -193,12 +187,23 @@ def printGant():
     plt.show()
     
 
+start = time.process_time()
 
-
-for i in range(1000):
+for i in range(0, 1000):
     learn()
 
+print(time.process_time()-start)
 
-printGant()
+print(bestTime)
+bestTime = 999999
+eps = 0
+
+learn()
+print(bestTime)
+print(np.round(q))
+
+
+
+#printGant()
 
 

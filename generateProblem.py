@@ -9,7 +9,7 @@ filename = os.path.join(dirname,"problem.json")
 name= "random problem"
 comment ="this is generated"
 
-problem_size = (10,10)
+problem_size = (7,7)
 
 
 def generate() :
