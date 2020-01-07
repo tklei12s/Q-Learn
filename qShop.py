@@ -9,7 +9,7 @@ import os
 
 class myProblem:
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'buch.json')
+    filename = os.path.join(dirname, 'problem.json')
     with open(filename) as f:
         data = json.load(f)
     name = data["name"]
