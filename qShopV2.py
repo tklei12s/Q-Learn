@@ -50,7 +50,7 @@ currentConfig = np.zeros((p1.m, maxTime), dtype=int)
 meanTimepermachine = [np.mean(p1.bearbeitungszeiten[i]) for i in range(0, p1.n)]
 bestPerMachine = np.ones((p1.m), dtype=float)*99999
 eps = 0.3
-gamma = 0.7
+gamma = 1
 curTime = 0
 
 def learn():
@@ -156,7 +156,9 @@ def updateQ(t):
     remainingTime = sum(zuBearbeiten[j])
     infi = sum(p1.bearbeitungszeiten[j])
 
-    r = 1000/pow((curTime + remainingTime + (p1.n-curPos) - infi),3)
+    x = curTime + remainingTime + (p1.n-curPos) - infi
+
+    r = 1000/pow(x,2)
 
     if curPos < p1.n-1:
         qMax = np.max([q[j][curPos+1][p] for p in range(0, p1.n)])
