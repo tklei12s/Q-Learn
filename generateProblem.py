@@ -6,10 +6,10 @@ import os
 dirname = os.path.dirname(__file__)
 filename = os.path.join(dirname,"problem.json")
 
-name= "random problem"
-comment ="this is generated"
-
-problem_size = (15,15)
+fixedSize = 5
+name = str(fixedSize)+'x'+str(fixedSize)+'-problem'
+comment ='a '+str(fixedSize)+'x'+str(fixedSize)+'-type problem'
+problem_size = (fixedSize,fixedSize)
 
 
 def generate() :
