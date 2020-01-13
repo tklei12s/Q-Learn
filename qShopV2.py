@@ -54,6 +54,7 @@ gamma = 1
 curTime = 0
 bestChanged = 0
 
+
 def learn():
     while(np.matrix.sum(np.matrix(zuBearbeiten)) != 0):
         options = getCurrentOptions()
@@ -134,6 +135,7 @@ def updateAll():
         working.remove(r)
         
     curTime += 1
+
 
 def resetAll():
     global belegung, zuBearbeiten, nextMachinePointer, nextMaschine, working, orderPointer, countAlpha, currentConfig, curTime
@@ -242,10 +244,4 @@ def start(maxIter):
     
 
 
-start(10)
-
-
-
-#printGant()
-
-
+start(sys.argv[2])
