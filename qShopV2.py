@@ -10,7 +10,7 @@ import time
 
 class myProblem:
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'problem.json')
+    filename = os.path.join(dirname, 'buch.json')
     with open(filename) as f:
         data = json.load(f)
     name = data["name"]
@@ -52,6 +52,7 @@ bestPerMachine = np.ones((p1.m), dtype=float)*99999
 eps = 0.3
 gamma = 1
 curTime = 0
+bestChanged = 0
 
 def learn():
     while(np.matrix.sum(np.matrix(zuBearbeiten)) != 0):
@@ -105,11 +106,13 @@ def getCurrentOptions():
     
 
 def updateAll():
-    global curTime, bestConfig, bestTime, working, zuBearbeiten
+    global curTime, bestConfig, bestTime, working, zuBearbeiten, bestChanged
 
     removeList = []
     if len(working) == 0 and np.matrix.sum(np.matrix(zuBearbeiten)) == 0:
+        bestChanged += 1
         if(curTime < bestTime):
+            bestChanged = 0
             bestTime = curTime
             bestConfig = currentConfig
     for t in working:
@@ -189,20 +192,14 @@ def printGant():
     plt.show()
     
 
-start = time.process_time()
 
-for i in range(0, 1000):
-    learn()
+def start(maxIter):
+    while(bestChanged<maxIter):
+        learn()
+    printGant()
 
-print(time.process_time()-start)
 
-print(bestTime)
-bestTime = 999999
-eps = 0
-
-learn()
-print(bestTime)
-print(np.round(q))
+start(100)
 
 
 
