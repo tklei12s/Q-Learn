@@ -2,7 +2,7 @@ import json
 import numpy as np
 import os
 
-fixedSize = 5
+fixedSize = 100
 name = str(fixedSize)+'x'+str(fixedSize)+'-problem'
 comment ='a '+str(fixedSize)+'x'+str(fixedSize)+'-type problem'
 problem_size = (fixedSize,fixedSize)

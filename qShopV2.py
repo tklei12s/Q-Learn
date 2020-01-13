@@ -8,7 +8,9 @@ import os
 import time
 import sys
 
-class myProblem:
+
+
+class Problem:
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, sys.argv[1])
     with open(filename) as f:
@@ -24,41 +26,42 @@ class myProblem:
     m = len(reihenfolge)
 
 
-p1 = myProblem()
+problemObj = Problem()
 
 
 
 #-----------------------
 
-#für den aktuellen State
+#fuer den aktuellen State
 
-maxTime = np.matrix.sum(np.matrix(p1.bearbeitungszeiten))
-belegung = np.zeros((p1.m, p1.n), dtype=int)       #null = Maschine frei, nicht null = Zeit bis Maschine frei
-zuBearbeiten = deepcopy(p1.bearbeitungszeiten)    #null = ist bearbeitet, nicht null muss bearbeitet werden
-nextMachinePointer = np.zeros((p1.n), dtype=int)   #Pointer auf den aktuellen Wert in der Reihenfolge Matrix
-nextMaschine = deepcopy(p1.reihenfolge[0])        #nextMaschine[i] gibt nächste Machine für Aufrtrag i. Falls -1 ist, ist Aufrag i fertig
+maxZeit = np.matrix.sum(np.matrix(problemObj.bearbeitungszeiten))   #Maximale Zeit, alle Jobs hintereinander
+belegung = np.zeros((problemObj.m, problemObj.n), dtype=int)       #null = Maschine frei, nicht null = Zeit bis Maschine frei
+zuBearbeiten = deepcopy(problemObj.bearbeitungszeiten)    #null = ist bearbeitet, nicht null muss bearbeitet werden
+nextMaschinePointer = np.zeros((problemObj.n), dtype=int)   #Pointer auf den aktuellen Wert in der Reihenfolge Matrix
+nextMaschine = deepcopy(problemObj.reihenfolge[0])        #nextMaschine[i] gibt naechste Machine fuer Aufrtrag i. Falls -1 ist, ist Aufrag i fertig
 working = []                            #Liste aller aktuell laufenden Prozesse (Auftrag, Maschine Tupel)
-maxRandQValue = 15                      #Q Table zufällig zwischen 0 und 10
-orderPointer = np.zeros(p1.m, dtype=int)           #Zeigt auf die Stelle in der Q tabelle der Machinen des index, der als nächsts dran ist
-q = np.zeros((p1.m, p1.n, p1.n), dtype=float)
-#q = np.random.randint(low=0, high=maxRandQValue, size=(p1.m, p1.n, p1.n))    #[Maschine][orderPointer][Job]
-blocked = np.zeros(p1.m, dtype=int)
-countAlpha = np.zeros((p1.m, p1.n, p1.n), dtype=int)
-bestTime = maxTime
-bestConfig = np.zeros((p1.m, maxTime), dtype=int)   #Gant Diagramm
-currentConfig = np.zeros((p1.m, maxTime), dtype=int)
-meanTimepermachine = [np.mean(p1.bearbeitungszeiten[i]) for i in range(0, p1.n)]
-bestPerMachine = np.ones((p1.m), dtype=float)*99999
+maxRandQValue =  15                     #Q Table zufaellig von 0 bis maxRandQValue
+orderPointer = np.zeros(problemObj.m, dtype=int)           #Zeigt auf die Stelle in der Q tabelle der Machinen des index, der als naechsts dran ist
+q = np.zeros((problemObj.m, problemObj.n, problemObj.n), dtype=float)       #[Maschine][orderPointer][Job]
+#q = np.random.randint(low=0, high=maxRandQValue, size=(problemObj.m, problemObj.n, problemObj.n))    
+blocked = np.zeros(problemObj.m, dtype=int)
+countAlpha = np.zeros((problemObj.m, problemObj.n, problemObj.n), dtype=int)
+bestTime = maxZeit  #aktuell beste zeit
+bestConfig = np.zeros((problemObj.m, maxZeit), dtype=int)   #Gant Diagramm
+currentConfig = np.zeros((problemObj.m, maxZeit), dtype=int)
+meanTimepermachine = [np.mean(problemObj.bearbeitungszeiten[i]) for i in range(0, problemObj.n)]
+bestPerMachine = np.ones((problemObj.m), dtype=float)*maxZeit
 eps = 0.3
-gamma = 1
-curTime = 0
-bestChanged = 0
+gamma = 0.7
+curTime = 0     #aktueller Zeitpunkt
+bestChanged = 0 #wie viele Iterartionen ist der beste Wert nicht besser geworden
 
 
 def learn():
-    while(np.matrix.sum(np.matrix(zuBearbeiten)) != 0):
-        options = getCurrentOptions()
-        while(len(options) > 0):
+    while(np.matrix.sum(np.matrix(zuBearbeiten)) != 0): #solange Problem nicht geloest
+        options = getCurrentOptions()   #moegliche Maschinen/Job Tupel berechnen
+        while(len(options) > 0):    #solange noch moegliche Job/Maschinen Tupel vorhanden
+            #entscheide ob zufaellig oder Q wert fuer auswahl des tupels
             randNum = np.random.randint(low=0, high=len(options), size=1)[0]
             rand = options[randNum]
             best = getMaxQValue(options)
@@ -67,11 +70,12 @@ def learn():
                 choose = rand
             else:
                 choose = best
+            #lege job auf maschine
             updateQ(choose)
             working.append(choose)
             i = choose[0]
             j = choose[1]
-            belegung[j][i] = p1.bearbeitungszeiten[j][i]
+            belegung[j][i] = problemObj.bearbeitungszeiten[j][i]
             blocked[j] = 1
             orderPointer[j] += 1
             options = getCurrentOptions()
@@ -81,31 +85,31 @@ def learn():
 
 
         
-
+#Gibt bestes Tupel aus Optionen basierend auf der Q Tabelle zurueck
 def getMaxQValue(options):
     bestO = options[0]
     bestValue = -1
     for o in options:
         i = o[0]
         j = o[1]
-        if(orderPointer[j] != p1.n):
+        if(orderPointer[j] != problemObj.n):
             cur = q[j][orderPointer[j]][i] #Q wert zu tupel (i,j)=o
             if(cur > bestValue):
                 bestO = o
                 bestValue = cur
     return bestO
 
-
+#berechnet aktuell moegliche Jobs/Maschinen Tupel
 def getCurrentOptions():
     result = []
-    for i in range(0, p1.n):
+    for i in range(0, problemObj.n):
         j = nextMaschine[i]
         if(j != -1 and blocked[j] == 0):
             if(belegung[j][i] == 0):
                 result.append((i,j))
     return result #tupel (auftrag, maschine)
     
-
+#updatet alle Variablen jede Zeiteinheit
 def updateAll():
     global curTime, bestConfig, bestTime, working, zuBearbeiten, bestChanged
 
@@ -125,85 +129,81 @@ def updateAll():
         if belegung[j][i] == 0:     #fertig geworden
             blocked[j] = 0
             removeList.append(t)
-            nextMachinePointer[i] +=1
-            if(nextMachinePointer[i] == p1.m):
+            nextMaschinePointer[i] +=1
+            if(nextMaschinePointer[i] == problemObj.m):
                 nextMaschine[i] = -1
             else:
-                nextMaschine[i] = p1.reihenfolge[nextMachinePointer[i]][i]
-
+                nextMaschine[i] = problemObj.reihenfolge[nextMaschinePointer[i]][i]
     for r in removeList:
         working.remove(r)
-        
     curTime += 1
 
-
+#resetet alle Variablen nach einem Lerndurchlauf
 def resetAll():
-    global belegung, zuBearbeiten, nextMachinePointer, nextMaschine, working, orderPointer, countAlpha, currentConfig, curTime
+    global belegung, zuBearbeiten, nextMaschinePointer, nextMaschine, working, orderPointer, countAlpha, currentConfig, curTime
     curTime = 0
-    belegung = np.zeros((p1.m, p1.n), dtype=int)
-    zuBearbeiten = deepcopy(p1.bearbeitungszeiten)
-    nextMachinePointer = np.zeros((p1.n), dtype=int)
-    nextMaschine = deepcopy(p1.reihenfolge[0])
+    belegung = np.zeros((problemObj.m, problemObj.n), dtype=int)
+    zuBearbeiten = deepcopy(problemObj.bearbeitungszeiten)
+    nextMaschinePointer = np.zeros((problemObj.n), dtype=int)
+    nextMaschine = deepcopy(problemObj.reihenfolge[0])
     working = []
-    orderPointer = np.zeros(p1.m, dtype=int)
-    #countAlpha = np.zeros((p1.m, p1.n, p1.n), dtype=int)
-    currentConfig = np.zeros((p1.m, maxTime), dtype=int)
+    orderPointer = np.zeros(problemObj.m, dtype=int)
+    currentConfig = np.zeros((problemObj.m, maxZeit), dtype=int)
 
 
-
+#updatet die Q Tabelle
 def updateQ(t):
     i = t[0]
     j = t[1]
     curPos = orderPointer[j]
-    countAlpha[j][curPos][i] += 1
-    alphaValue = 1/(1+countAlpha[j][curPos][i])
+    countAlpha[j][curPos][i] += 1 #anzhal besuche in diesem zustand/aktions paar
+    alphaValue = 1/(1+countAlpha[j][curPos][i]) #alpha berechnen
 
     remainingTime = sum(zuBearbeiten[j])
-    infi = sum(p1.bearbeitungszeiten[j])
+    infi = sum(problemObj.bearbeitungszeiten[j])#groeßte untere schranke fuer den fertigstellungszeitpunkt
 
-    x = curTime + remainingTime + (p1.n-curPos) - infi
-
-    r = 1000/pow(x,2)
-
-    if curPos < p1.n-1:
-        qMax = np.max([q[j][curPos+1][p] for p in range(0, p1.n)])
+    x = curTime + remainingTime + (problemObj.n-curPos) - infi #schaetzung abweichung vom infimum
+    r = 1000/pow(x,2)   #berechnung reward
+    if curPos < problemObj.n-1:
+        qMax = np.max([q[j][curPos+1][p] for p in range(0, problemObj.n)])
     else:
         qMax = 0
 
     q[j][curPos][i] = (1-alphaValue) * q[j][curPos][i] + alphaValue*(r+gamma*qMax)
 
-
-
-def maschineFertig(j, i):
-    for p in range(0, p1.n):
-        if p == i:
-            continue
-        if zuBearbeiten[j][p] != 0:
-            return False
-    return True
-
+#gant diagramm anzeigen
 def printGant():
+    print('Q-Table')
     print(np.round(q))
-    gant = normGant()
-    print(gant)
+    print('Zielwert')
     print(bestTime)
-    sns.heatmap(gant)
+    gant = normGant()
+
+    f, ax = plt.subplots(figsize=(11, 7))
+    ax = sns.heatmap(data=gant, yticklabels=range(0,problemObj.n), cbar_kws={'ticks': range(0,problemObj.n+1), 'label': 'Jobs'},cmap=sns.cubehelix_palette(n_colors=problemObj.n+1, start=0, rot=0.8, dark=0.1, light=1, reverse=False))
+    ax.axhline(y=0, color='k',linewidth=5)
+    ax.axhline(y=problemObj.n, color='k',linewidth=5)
+    ax.axvline(x=0, color='k',linewidth=5)
+    ax.axvline(x=bestTime, color='k',linewidth=5)
+    plt.ylabel('Maschine')
+    plt.xlabel('Zeiteinheiten')
     plt.show()
 
+#gant diagramm auf bestTime kuerzen
 def normGant():
-    newBestConfig = np.zeros((p1.m, bestTime), dtype=int)
-    for i in range(0, p1.m):
+    newBestConfig = np.zeros((problemObj.m, bestTime), dtype=int)
+    for i in range(0, problemObj.m):
         for j in range(0, bestTime):
             newBestConfig[i][j] = bestConfig[i][j]
     return newBestConfig
 
-
+#Json ausgeben
 def jsonOut():
     gant = normGant()
 
-    schedule = np.zeros((p1.m, p1.n, 2), dtype=int)
+    schedule = np.zeros((problemObj.m, problemObj.n, 2), dtype=int)
 
-    for j in range(0, p1.m):
+    for j in range(0, problemObj.m):
         curJob = 0
         schedulePos = 0
         for i in range (0, bestTime):
@@ -216,14 +216,14 @@ def jsonOut():
     
     scheduleList = schedule.tolist()
     data = {
-        'name' : p1.name,
-        'kommentar' : p1.kommentar,
-        'zielfunktion' : p1.zielfunktion,
+        'name' : problemObj.name,
+        'kommentar' : problemObj.kommentar,
+        'zielfunktion' : problemObj.zielfunktion,
         'zielwert' : bestTime,
         'schedule' : scheduleList
     }
 
-    solName = p1.name + 'Sol.json'
+    solName = problemObj.name + 'Sol.json'
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname,solName)
 
@@ -234,14 +234,11 @@ def jsonOut():
 
 
 
-
-
 def start(maxIter):
     while(bestChanged<maxIter):
         learn()
     jsonOut()
     printGant()
     
-
-
-start(sys.argv[2])
+    
+start(int(sys.argv[2]))
