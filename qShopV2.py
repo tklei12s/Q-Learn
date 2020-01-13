@@ -6,11 +6,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 import time
-
+import sys
 
 class myProblem:
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, 'buch.json')
+    filename = os.path.join(dirname, sys.argv[1])
     with open(filename) as f:
         data = json.load(f)
     name = data["name"]
