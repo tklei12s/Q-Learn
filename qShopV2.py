@@ -182,24 +182,67 @@ def maschineFertig(j, i):
 
 def printGant():
     print(np.round(q))
+    gant = normGant()
+    print(gant)
+    print(bestTime)
+    sns.heatmap(gant)
+    plt.show()
+
+def normGant():
     newBestConfig = np.zeros((p1.m, bestTime), dtype=int)
     for i in range(0, p1.m):
         for j in range(0, bestTime):
             newBestConfig[i][j] = bestConfig[i][j]
-    print(newBestConfig)
-    print(bestTime)
-    sns.heatmap(newBestConfig)
-    plt.show()
+    return newBestConfig
+
+
+def jsonOut():
+    gant = normGant()
+
+    schedule = np.zeros((p1.m, p1.n, 2), dtype=int)
+
+    for j in range(0, p1.m):
+        curJob = 0
+        schedulePos = 0
+        for i in range (0, bestTime):
+            if gant[j][i] != curJob:
+                curJob = gant[j][i]
+                if curJob != 0:
+                    schedule[j][schedulePos][0] = curJob
+                    schedule[j][schedulePos][1] = i
+                    schedulePos += 1
     
+    scheduleList = schedule.tolist()
+    data = {
+        'name' : p1.name,
+        'kommentar' : p1.kommentar,
+        'zielfunktion' : p1.zielfunktion,
+        'zielwert' : bestTime,
+        'schedule' : scheduleList
+    }
+
+    solName = p1.name + 'Sol.json'
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname,solName)
+
+    if(os.path.isfile(filename)):
+        os.remove(filename)
+    with open(filename, 'x') as f:
+        json.dump(data,f)
+
+
+
 
 
 def start(maxIter):
     while(bestChanged<maxIter):
         learn()
+    jsonOut()
     printGant()
+    
 
 
-start(100)
+start(10)
 
 
 
