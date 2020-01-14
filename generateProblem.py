@@ -1,8 +1,9 @@
 import json
 import numpy as np
 import os
+import sys
 
-fixedSize = 100
+fixedSize = int(sys.argv[2])
 name = str(fixedSize)+'x'+str(fixedSize)+'-problem'
 comment ='a '+str(fixedSize)+'x'+str(fixedSize)+'-type problem'
 problem_size = (fixedSize,fixedSize)

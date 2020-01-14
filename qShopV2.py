@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import os
 import time
 import sys
+from time import time
 
 
 
@@ -51,10 +52,12 @@ bestConfig = np.zeros((problemObj.m, maxZeit), dtype=int)   #Gant Diagramm
 currentConfig = np.zeros((problemObj.m, maxZeit), dtype=int)
 meanTimepermachine = [np.mean(problemObj.bearbeitungszeiten[i]) for i in range(0, problemObj.n)]
 bestPerMachine = np.ones((problemObj.m), dtype=float)*maxZeit
-eps = 0.3
-gamma = 0.7
+eps = float(sys.argv[3])
+gamma = float(sys.argv[5])
 curTime = 0     #aktueller Zeitpunkt
 bestChanged = 0 #wie viele Iterartionen ist der beste Wert nicht besser geworden
+startTime = time()
+finishTime = time()
 
 
 def learn():
@@ -160,7 +163,7 @@ def updateQ(t):
     alphaValue = 1/(1+countAlpha[j][curPos][i]) #alpha berechnen
 
     remainingTime = sum(zuBearbeiten[j])
-    infi = sum(problemObj.bearbeitungszeiten[j])#groeßte untere schranke fuer den fertigstellungszeitpunkt
+    infi = sum(problemObj.bearbeitungszeiten[j])#groesste untere schranke fuer den fertigstellungszeitpunkt
 
     x = curTime + remainingTime + (problemObj.n-curPos) - infi #schaetzung abweichung vom infimum
     r = 1000/pow(x,2)   #berechnung reward
@@ -200,7 +203,8 @@ def normGant():
 #Json ausgeben
 def jsonOut():
     gant = normGant()
-
+    processTime = str(finishTime - startTime)
+    processTime=processTime[:-11]
     schedule = np.zeros((problemObj.m, problemObj.n, 2), dtype=int)
 
     for j in range(0, problemObj.m):
@@ -220,7 +224,8 @@ def jsonOut():
         'kommentar' : problemObj.kommentar,
         'zielfunktion' : problemObj.zielfunktion,
         'zielwert' : bestTime,
-        'schedule' : scheduleList
+        'schedule' : scheduleList,
+        'Laufzeit' : processTime+" Sekunden"
     }
 
     solName = problemObj.name + 'Sol.json'
@@ -235,10 +240,13 @@ def jsonOut():
 
 
 def start(maxIter):
+    startTime = time() 
     while(bestChanged<maxIter):
         learn()
-    jsonOut()
+    finishTime = time()
     printGant()
+    jsonOut()
     
-    
-start(int(sys.argv[2]))
+   
+start(int(sys.argv[7]))
+
