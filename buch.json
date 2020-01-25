@@ -1,6 +1,6 @@
 {
-	"name": "4M4T",
-	"kommentar": "",
+	"name": "Buch",
+	"kommentar": "Beispiel aus dem Buch.",
 	"reihenfolge": [
 		[0, 1, 3, 2],
 		[1, 0, 2, 3],
@@ -13,6 +13,5 @@
 		[3, 8, 5, 4],
 		[2, 6, 3, 7]
 	],
-	"liefertermin": [4, 6, 7, 3, 2],
 	"zielfunktion": "Cmax"
 }

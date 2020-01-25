@@ -240,6 +240,7 @@ def jsonOut():
 
 
 def start(maxIter):
+    global startTime,finishTime
     startTime = time() 
     while(bestChanged<maxIter):
         learn()
